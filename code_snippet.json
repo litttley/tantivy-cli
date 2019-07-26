@@ -1,0 +1,9 @@
+{"moudle":"liunx","title":"grep","body":"netstat -ntulp |grep 80 ","remark":"查端口"}
+{"moudle":"liunx","title":"kill","body":"kill -9 xxxx ","remark":"杀死进程"}
+{"moudle":"liunx","title":"tar xvf","body":"tar xvf FileName.tar ","remark":"解包"}
+{"moudle":"liunx","title":"tar cvf","body":"tar cvf FileName.tar DirName ","remark":"打包"}
+{"moudle":"liunx","title":"nohup","body":"sudo nohup ./my_blog2 &","remark":"actix-web服务后台运行"}
+{"moudle":"liunx","title":"iptables","body":"vi  /etc/sysconfig/iptables &","remark":"iptables配置"}
+{"moudle":"liunx","title":"iptables","body":"service iptables restart","remark":"iptables重置"}
+{"moudle":"rust","title":"diesel","body":"migration generate xxxx","remark":"生成迁移"}
+{"moudle":"rust","title":"diesel","body":"diesel migration run","remark":"迁移"}
