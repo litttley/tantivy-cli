@@ -15,13 +15,18 @@ use tantivy::Document;
 use tantivy::Index;
 use tantivy::IndexWriter;
 use time::PreciseTime;
-
+use cang_jie::{CangJieTokenizer, TokenizerOption, CANG_JIE};
+use jieba_rs::Jieba;
+use std::{collections::HashSet,  iter::FromIterator, sync::Arc};
+use tantivy::{collector::TopDocs, doc, query::QueryParser, schema::*};
 pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(argmatch.value_of("index").unwrap());
+
     let document_source = argmatch
         .value_of("file")
         .map(|path| DocumentSource::FromFile(PathBuf::from(path)))
         .unwrap_or(DocumentSource::FromPipe);
+
     let no_merge = argmatch.is_present("nomerge");
     let mut num_threads = value_t!(argmatch, "num_threads", usize)
         .map_err(|_| format!("Failed to read num_threads argument as an integer."))?;
@@ -31,6 +36,8 @@ pub fn run_index_cli(argmatch: &ArgMatches) -> Result<(), String> {
     let buffer_size = value_t!(argmatch, "memory_size", usize)
         .map_err(|_| format!("Failed to read the buffer size argument as an integer."))?;
     let buffer_size_per_thread = buffer_size / num_threads;
+    println!("index_directory的内容:{:?}",index_directory);
+
     run_index(
         index_directory,
         document_source,
@@ -49,6 +56,14 @@ fn run_index(
     no_merge: bool,
 ) -> tantivy::Result<()> {
     let index = Index::open_in_dir(&directory)?;
+    let tokenizer  =
+        CangJieTokenizer {
+            worker: Arc::new(Jieba::empty()), // empty dictionary
+            option: TokenizerOption::Unicode,
+        };
+    index
+        .tokenizers()
+        .register(CANG_JIE, tokenizer);
     let schema = index.schema();
     let (line_sender, line_receiver) = chan::sync(10_000);
     let (doc_sender, doc_receiver) = chan::sync(10_000);
@@ -57,7 +72,9 @@ fn run_index(
         let articles = document_source.read().unwrap();
         for article_line_res in articles.lines() {
             let article_line = article_line_res.unwrap();
+            println!("article_line内容:{:?}",article_line);
             line_sender.send(article_line);
+
         }
     });
 

@@ -40,7 +40,9 @@ use tantivy::Index;
 use tantivy::IndexReader;
 use timer::TimerTree;
 use urlencoded::UrlEncodedQuery;
-
+use cang_jie::{CangJieTokenizer, TokenizerOption, CANG_JIE};
+use jieba_rs::Jieba;
+use std::{collections::HashSet, io, iter::FromIterator, sync::Arc};
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     let port = value_t!(matches, "port", u16).unwrap_or(3000u16);
@@ -73,14 +75,12 @@ struct IndexServer {
 impl IndexServer {
     fn load(path: &Path) -> IndexServer {
         let index = Index::open_in_dir(path).unwrap();
-        index.tokenizers().register(
-            "commoncrawl",
-            SimpleTokenizer
-                .filter(RemoveLongFilter::limit(40))
-                .filter(LowerCaser)
-                .filter(AlphaNumOnlyFilter)
-                .filter(Stemmer::new(Language::English)),
-        );
+        let tokenizer  =
+            CangJieTokenizer {
+                worker: Arc::new(Jieba::empty()), // empty dictionary
+                option: TokenizerOption::Unicode,
+            };
+        index.tokenizers().register(CANG_JIE, tokenizer);
         let schema = index.schema();
         let default_fields: Vec<Field> = schema
             .fields()

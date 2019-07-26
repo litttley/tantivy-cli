@@ -30,7 +30,9 @@ byteorder = "0.5"
 log = "0.3"
 futures = "0.1"
 env_logger = "0.3"
+jieba-rs = "0.4.8"
 tantivy = "0.10"
+cang-jie = "0.5.0"
 
 [[bin]]
 name = "tantivy"

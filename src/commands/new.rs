@@ -11,7 +11,9 @@ use tantivy::schema::Cardinality;
 use tantivy::schema::*;
 use tantivy::Index;
 use std::fs;
-
+use cang_jie::{CangJieTokenizer, TokenizerOption, CANG_JIE};
+use jieba_rs::Jieba;
+use std::{collections::HashSet,  iter::FromIterator, sync::Arc};
 
 pub fn run_new_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
@@ -77,7 +79,10 @@ fn prompt_yn(msg: &str) -> bool {
 }
 
 fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
-    let mut text_options = TextOptions::default();
+    let text_field_indexing = TextFieldIndexing::default()
+        .set_tokenizer(CANG_JIE)
+        .set_index_option(IndexRecordOption::WithFreqsAndPositions);
+    let mut text_options = TextOptions::default().set_indexing_options(text_field_indexing);
     if prompt_yn("Should the field be stored") {
         text_options = text_options.set_stored();
     }
@@ -85,7 +90,7 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
     if prompt_yn("Should the field be indexed") {
         let mut text_indexing_options = TextFieldIndexing::default()
             .set_index_option(IndexRecordOption::Basic)
-            .set_tokenizer("en_stem");
+            .set_tokenizer(CANG_JIE);
 
         if prompt_yn("Should the term be tokenized?") {
             if prompt_yn("Should the term frequencies (per doc) be in the index") {
@@ -98,7 +103,7 @@ fn ask_add_field_text(field_name: &str, schema_builder: &mut SchemaBuilder) {
                 }
             }
         } else {
-            text_indexing_options = text_indexing_options.set_tokenizer("raw");
+            text_indexing_options = text_indexing_options.set_tokenizer(CANG_JIE);
         }
 
         text_options = text_options.set_indexing_options(text_indexing_options);

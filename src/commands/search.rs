@@ -8,7 +8,9 @@ use tantivy::query::QueryParser;
 use tantivy::schema::Field;
 use tantivy::schema::FieldType;
 use tantivy::Index;
-
+use cang_jie::{CangJieTokenizer, TokenizerOption, CANG_JIE};
+use jieba_rs::Jieba;
+use std::{collections::HashSet,  iter::FromIterator, sync::Arc};
 pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
     let query = matches.value_of("query").unwrap();
@@ -17,6 +19,14 @@ pub fn run_search_cli(matches: &ArgMatches) -> Result<(), String> {
 
 fn run_search(directory: &Path, query: &str) -> tantivy::Result<()> {
     let index = Index::open_in_dir(directory)?;
+    let tokenizer  =
+        CangJieTokenizer {
+            worker: Arc::new(Jieba::empty()), // empty dictionary
+            option: TokenizerOption::Unicode,
+        };
+    index
+        .tokenizers()
+        .register(CANG_JIE, tokenizer);
     let schema = index.schema();
     let default_fields: Vec<Field> = schema
         .fields()

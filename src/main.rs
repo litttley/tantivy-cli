@@ -16,6 +16,8 @@ extern crate staticfile;
 extern crate tantivy;
 extern crate time;
 extern crate urlencoded;
+extern crate cang_jie;
+extern crate jieba_rs;
 
 #[macro_use]
 extern crate serde_derive;
