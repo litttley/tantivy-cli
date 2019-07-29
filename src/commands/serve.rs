@@ -15,7 +15,7 @@
 use clap::ArgMatches;
 use iron::mime::Mime;
 use iron::prelude::*;
-use iron::status;
+use iron::{status, Headers};
 use iron::typemap::Key;
 use mount::Mount;
 use persistent::Read;
@@ -43,9 +43,13 @@ use urlencoded::UrlEncodedQuery;
 use cang_jie::{CangJieTokenizer, TokenizerOption, CANG_JIE};
 use jieba_rs::Jieba;
 use std::{collections::HashSet, io, iter::FromIterator, sync::Arc};
+use iron::headers::{ AccessControlAllowOrigin };
+use iron::mime::{ TopLevel, SubLevel, Attr, Value};
+use iron::headers::ContentType;
+
 pub fn run_serve_cli(matches: &ArgMatches) -> Result<(), String> {
     let index_directory = PathBuf::from(matches.value_of("index").unwrap());
-    let port = value_t!(matches, "port", u16).unwrap_or(3000u16);
+    let port = value_t!(matches, "port", u16).unwrap_or(8081u16);
     let host_str = matches.value_of("host").unwrap_or("localhost");
     let host = format!("{}:{}", host_str, port);
     run_serve(index_directory, &host).map_err(|e| format!("{:?}", e))
@@ -185,11 +189,18 @@ fn search(req: &mut Request) -> IronResult<Response> {
             let serp = index_server.search(query, num_hits).unwrap();
             let resp_json = serde_json::to_string_pretty(&serp).unwrap();
             let content_type = "application/json".parse::<Mime>().unwrap();
-            Ok(Response::with((
-                content_type,
+            let mut response = Response::new();
+            response.set_mut(status::Ok).set_mut(resp_json);
+            response.headers.set(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![(Attr::Charset, Value::Utf8)])));
+            response.headers.set(AccessControlAllowOrigin::Any);
+         /*   Ok(Response::with((
+                iron::headers::AccessControlAllowOrigin::Any
+                ,
+                              content_type,
                 status::Ok,
                 format!("{}", resp_json),
-            )))
+            )))*/
+            Ok(response)
         })
 }
 
